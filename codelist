@@ -1,0 +1,68 @@
+import win32com.client as wc
+import pandas as pd
+import pandas.io.sql as pd_sql
+import sqlite3 as sq
+
+objCpCodeMgr = wc.Dispatch("CpUtil.CpCodeMgr")
+
+#KOSPI, KOSDAQ 종목코드 dataframe으로 저장하기
+KSP_Name = []
+KSQ_Name = []
+
+KSP_code= list(objCpCodeMgr.GetStockListByMarket(1)) #KSP 코드리스트 반환
+for x in range(len(KSP_code)):
+    KSP_Name.append(objCpCodeMgr.CodeToName(KSP_code[x]))
+KSP_df = pd.DataFrame({'code':KSP_code, 'name':KSP_Name})   #dataframe만들때는 ({a:aa},{b:bb})가 아니라 ({a:aa, b:bb}) 임
+print(KSP_df)
+
+KSQ_code = list(objCpCodeMgr.GetStockListByMarket(2))  #KOSDAQ
+for x in range(len(KSQ_code)):
+    KSQ_Name.append(objCpCodeMgr.CodeToName(KSQ_code[x]))
+KSQ_df = pd.DataFrame({'code':KSQ_code, 'name':KSQ_Name})   #dataframe만들때는 ({a:aa},{b:bb})가 아니라 ({a:aa, b:bb}) 임
+print(KSQ_df)
+
+
+#KOSPI섹터, KOSDAQ섹터 dataframe으로 저장하기
+KSP_industry_Name=[]
+KSQ1_industry_Name = []
+KSQ2_industry_Name = []
+
+#"코스피섹터"
+KSP_industry_Code = list(objCpCodeMgr.GetIndustryList())   # KSP 섹터코드리스트 반환(반환값이 tuple이여서 list로변환해줘야함)
+for x in range(len(KSP_industry_Code)):
+    KSP_industry_Name.append(objCpCodeMgr.CodeToName(KSP_industry_Code[x]))
+KSP_industry_df = pd.DataFrame({'code':KSP_industry_Code, 'name':KSP_industry_Name})   #dataframe만들때는 ({a:aa},{b:bb})가 아니라 ({a:aa, b:bb}) 임
+print(KSP_industry_df)
+
+#"코스닥1섹터"
+KSQ1_industry_Code = list(objCpCodeMgr.GetKosdaqIndustry1List())   # KSQ섹터코드리스트1 반환
+for x in range(len(KSQ1_industry_Code)):
+   KSQ1_industry_Name.append(objCpCodeMgr.CodeToName(KSQ1_industry_Code[x]))
+KSQ1_industry_df = pd.DataFrame({'code':KSQ1_industry_Code, 'name':KSQ1_industry_Name})
+print(KSQ1_industry_df)
+
+#"코스닥2섹터"
+KSQ2_industry_Code = list(objCpCodeMgr.GetKosdaqIndustry2List())   # KSQ섹터코드리스2트 반환
+for x in range(len(KSQ2_industry_Code)):
+    KSQ2_industry_Name.append(objCpCodeMgr.CodeToName(KSQ2_industry_Code[x]))
+KSQ2_industry_df = pd.DataFrame({'code':KSQ2_industry_Code, 'name':KSQ2_industry_Name})
+print(KSQ2_industry_df)
+
+
+
+#위DataFrame을 sqlite를 이용해 DB로 저장
+conn = sq.connect("code.db")
+tableName = 't_ksp'
+pd_sql.to_sql(KSP_df,tableName,conn,if_exists='fail',index=True) #if_exists랑 index설정에 항상 유의
+tableName = 't_ksq'
+pd_sql.to_sql(KSQ_df,tableName,conn,if_exists='fail',index=True) #if_exists랑 index설정에 항상 유의
+conn.close()
+
+conn = sq.connect("code_industry.db")
+tableName = 't_ksp_industry'
+pd_sql.to_sql(KSP_industry_df,tableName,conn,if_exists='fail',index=True) #if_exists랑 index설정에 항상 유의
+tableName = 't_ksq1_industry'
+pd_sql.to_sql(KSQ1_industry_df,tableName,conn,if_exists='fail',index=True) #if_exists랑 index설정에 항상 유의
+tableName = 't_ksq2_industry'
+pd_sql.to_sql(KSQ2_industry_df,tableName,conn,if_exists='fail',index=True) #if_exists랑 index설정에 항상 유의
+conn.close()
